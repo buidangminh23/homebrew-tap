@@ -5,17 +5,12 @@ repo="buidangminh23/quota-control"
 cask="$(cd "$(dirname "$0")/.." && pwd)/Casks/quota-control.rb"
 
 tag=""
-allow_downgrade=false
 while [[ $# -gt 0 ]]
 do
   case "$1" in
     --tag)
       tag="${2:-}"
       shift 2
-      ;;
-    --allow-downgrade)
-      allow_downgrade=true
-      shift
       ;;
     *)
       echo "unknown option $1" >&2
@@ -49,9 +44,9 @@ then
 fi
 newest="$(printf '%s\n%s\n' "${current}" "${version}" | sort -V)"
 newest="${newest##*$'\n'}"
-if [[ "${allow_downgrade}" != true && "${newest}" != "${version}" ]]
+if [[ "${newest}" != "${version}" ]]
 then
-  echo "release ${version} is older than the cask's ${current}; leaving it alone (pass --allow-downgrade to move back)" >&2
+  echo "release ${version} is older than the cask's ${current}; leaving it alone" >&2
   exit 0
 fi
 

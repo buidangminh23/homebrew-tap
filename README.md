@@ -99,8 +99,8 @@ them too, along with the launch agent older versions set up.
 `.github/workflows/update-casks.yml` runs every three hours and on demand. It reads the latest
 Quota Control release, takes the DMG's checksum from the release's `SHA256SUMS` and confirms it
 against the downloaded DMG, then audits, installs and checks the cask on macOS before committing.
-A release without a macOS DMG, or a failed check, leaves the cask where it was. To follow a
-release at once, or to point the cask at a given tag:
+A release without a macOS DMG, a release older than the cask, or a failed check leaves the cask
+where it was. To follow a release at once, or to point the cask at a given newer tag:
 
 ```bash
 gh workflow run update-casks.yml -R buidangminh23/homebrew-tap
@@ -108,8 +108,7 @@ gh workflow run update-casks.yml -R buidangminh23/homebrew-tap -f tag=v0.3.43
 ```
 
 The same bump runs locally with `scripts/update-quota-control.sh [--tag vX.Y.Z]`, which needs an
-authenticated `gh`. It never moves the cask to an older release unless you also pass
-`--allow-downgrade`, which a dispatch with `-f tag=` does.
+authenticated `gh`.
 
 ## Scheduled workflows
 

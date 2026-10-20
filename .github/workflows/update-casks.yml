@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Quota Control release tag to point the cask at (default the latest release)
+        description: Newer Quota Control release tag to point the cask at (default the latest release)
         required: false
 
 permissions:
@@ -20,7 +20,8 @@ jobs:
   # Installing the cask copies the downloaded app and runs its postflight, so
   # this job holds no write token. The commit job below repeats the bump for
   # the tested release tag and pushes only when it lands on the same checksum.
-  # Only a dispatch that names a tag may move the cask back to an older version.
+  # Neither job moves the cask to an older release; brew audit's livecheck
+  # check would reject one anyway.
   test-quota-control:
     runs-on: macos-latest
     timeout-minutes: 30
@@ -41,7 +42,7 @@ jobs:
           TAG: ${{ inputs.tag }}
         run: |
           if [ -n "$TAG" ]; then
-            bash scripts/update-quota-control.sh --tag "$TAG" --allow-downgrade
+            bash scripts/update-quota-control.sh --tag "$TAG"
           else
             bash scripts/update-quota-control.sh
           fi
@@ -66,7 +67,7 @@ jobs:
 
   commit-quota-control:
     needs: test-quota-control
-    if: needs.test-quota-control.outputs.updated == 'true'
+    if: github.ref == 'refs/heads/main' && needs.test-quota-control.outputs.updated == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -79,13 +80,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.test-quota-control.outputs.tag }}
-          PINNED: ${{ inputs.tag }}
-        run: |
-          if [ -n "$PINNED" ]; then
-            bash scripts/update-quota-control.sh --tag "$TAG" --allow-downgrade
-          else
-            bash scripts/update-quota-control.sh --tag "$TAG"
-          fi
+        run: bash scripts/update-quota-control.sh --tag "$TAG"
 
       - name: Commit the tested version
         env:
