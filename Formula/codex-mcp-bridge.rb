@@ -16,7 +16,19 @@ class CodexMcpBridge < Formula
 
   def install
     system "npm", "install", *std_npm_args
-    bin.install_symlink libexec.glob("bin/*")
+    bin.install_symlink libexec.glob("bin/*").reject { |command| command.basename.to_s == "codex-npm-footer-install" }
+  end
+
+  def caveats
+    <<~EOS
+      Register the bridge with your clients:
+        codex-mcp-bridge-install      # Claude Desktop
+        claude-mcp-bridge-install     # Codex
+        codex-native-relay-install    # Codex Desktop native relay (macOS)
+
+      Registrations use Homebrew's stable opt paths, so they keep working after
+      `brew upgrade codex-mcp-bridge` and running bridges reload the new version.
+    EOS
   end
 
   test do
