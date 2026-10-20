@@ -16,7 +16,7 @@ jobs:
   codex-mcp-bridge:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Bump to the latest npm release
         id: bump
@@ -28,10 +28,9 @@ jobs:
           HOMEBREW_NO_AUTO_UPDATE: "1"
           HOMEBREW_NO_INSTALL_CLEANUP: "1"
         run: |
-          tap="$(brew --repository)/Library/Taps/buidangminh23/homebrew-tap"
-          mkdir -p "$(dirname "$tap")"
-          rm -rf "$tap"
-          ln -s "$GITHUB_WORKSPACE" "$tap"
+          git add Formula/codex-mcp-bridge.rb
+          git -c user.name=ci -c user.email=ci@localhost commit -q -m "test bump"
+          brew tap buidangminh23/tap "$GITHUB_WORKSPACE"
           brew style buidangminh23/tap
           brew install --build-from-source buidangminh23/tap/codex-mcp-bridge
           brew test buidangminh23/tap/codex-mcp-bridge
@@ -44,6 +43,5 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add Formula/codex-mcp-bridge.rb
-          git commit -m "codex-mcp-bridge ${VERSION}"
-          git push
+          git commit --amend -q --reset-author -m "codex-mcp-bridge ${VERSION}"
+          git push origin HEAD:main
