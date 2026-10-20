@@ -1,0 +1,106 @@
+name: Update casks
+
+on:
+  schedule:
+    - cron: "47 */3 * * *"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Quota Control release tag to point the cask at (default the latest release)
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-casks
+  cancel-in-progress: false
+
+jobs:
+  # Installing the cask copies the downloaded app and runs its postflight, so
+  # this job holds no write token. The commit job below repeats the bump for
+  # the tested release tag and pushes only when it lands on the same checksum.
+  # Only a dispatch that names a tag may move the cask back to an older version.
+  test-quota-control:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    outputs:
+      updated: ${{ steps.bump.outputs.updated }}
+      version: ${{ steps.bump.outputs.version }}
+      tag: ${{ steps.bump.outputs.tag }}
+      sha256: ${{ steps.bump.outputs.sha256 }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Point the cask at the newest release with a DMG
+        id: bump
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          if [ -n "$TAG" ]; then
+            bash scripts/update-quota-control.sh --tag "$TAG" --allow-downgrade
+          else
+            bash scripts/update-quota-control.sh
+          fi
+
+      - name: Audit, install and test the bumped cask
+        if: steps.bump.outputs.updated == 'true'
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+          HOMEBREW_NO_INSTALL_CLEANUP: "1"
+          VERSION: ${{ steps.bump.outputs.version }}
+        run: |
+          git add Casks/quota-control.rb
+          git -c user.name=ci -c user.email=ci@localhost commit -q -m "test bump"
+          brew tap buidangminh23/tap "$GITHUB_WORKSPACE"
+          brew style buidangminh23/tap
+          brew audit --cask --strict --online buidangminh23/tap/quota-control
+          brew install --cask buidangminh23/tap/quota-control
+          reported="$("$(brew --prefix)/bin/usagectl" --version)"
+          echo "$reported"
+          [ "$reported" = "usagectl $VERSION" ]
+          brew uninstall --cask buidangminh23/tap/quota-control
+
+  commit-quota-control:
+    needs: test-quota-control
+    if: needs.test-quota-control.outputs.updated == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Repeat the bump for the tested tag
+        id: bump
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.test-quota-control.outputs.tag }}
+          PINNED: ${{ inputs.tag }}
+        run: |
+          if [ -n "$PINNED" ]; then
+            bash scripts/update-quota-control.sh --tag "$TAG" --allow-downgrade
+          else
+            bash scripts/update-quota-control.sh --tag "$TAG"
+          fi
+
+      - name: Commit the tested version
+        env:
+          TESTED_VERSION: ${{ needs.test-quota-control.outputs.version }}
+          TESTED_SHA256: ${{ needs.test-quota-control.outputs.sha256 }}
+          VERSION: ${{ steps.bump.outputs.version }}
+          SHA256: ${{ steps.bump.outputs.sha256 }}
+        run: |
+          if [ "$VERSION" != "$TESTED_VERSION" ] || [ "$SHA256" != "$TESTED_SHA256" ]; then
+            echo "the release moved from the tested $TESTED_VERSION ($TESTED_SHA256) to $VERSION ($SHA256); the next run tests it"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Casks/quota-control.rb
+          git commit -m "quota-control ${VERSION}"
+          git pull --rebase origin main
+          git push origin HEAD:main
