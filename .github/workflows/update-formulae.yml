@@ -6,17 +6,26 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: update-formulae
   cancel-in-progress: false
 
 jobs:
-  codex-mcp-bridge:
+  # Installing and testing runs code from the npm tarball, so this job holds
+  # no write token. The commit job below repeats the deterministic bump and
+  # pushes only when it lands on the same version this job tested.
+  test-codex-mcp-bridge:
     runs-on: macos-latest
+    outputs:
+      updated: ${{ steps.bump.outputs.updated }}
+      version: ${{ steps.bump.outputs.version }}
+      sha256: ${{ steps.bump.outputs.sha256 }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Bump to the latest npm release
         id: bump
@@ -36,12 +45,32 @@ jobs:
           brew test buidangminh23/tap/codex-mcp-bridge
           brew audit --strict --online buidangminh23/tap/codex-mcp-bridge
 
-      - name: Commit the bump
-        if: steps.bump.outputs.updated == 'true'
+  commit-codex-mcp-bridge:
+    needs: test-codex-mcp-bridge
+    if: needs.test-codex-mcp-bridge.outputs.updated == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Repeat the bump
+        id: bump
+        run: bash scripts/update-codex-mcp-bridge.sh
+
+      - name: Commit the tested version
         env:
+          TESTED_VERSION: ${{ needs.test-codex-mcp-bridge.outputs.version }}
+          TESTED_SHA256: ${{ needs.test-codex-mcp-bridge.outputs.sha256 }}
           VERSION: ${{ steps.bump.outputs.version }}
+          SHA256: ${{ steps.bump.outputs.sha256 }}
         run: |
+          if [ "$VERSION" != "$TESTED_VERSION" ] || [ "$SHA256" != "$TESTED_SHA256" ]; then
+            echo "npm moved from the tested $TESTED_VERSION to $VERSION; the next run tests it"
+            exit 0
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit --amend -q --reset-author -m "codex-mcp-bridge ${VERSION}"
+          git add Formula/codex-mcp-bridge.rb
+          git commit -m "codex-mcp-bridge ${VERSION}"
           git push origin HEAD:main

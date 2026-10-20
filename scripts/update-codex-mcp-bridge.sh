@@ -54,5 +54,6 @@ if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
     echo "updated=true"
     echo "previous=$current"
     echo "version=$version"
+    echo "sha256=$sha256"
   } >>"$GITHUB_OUTPUT"
 fi

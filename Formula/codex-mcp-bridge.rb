@@ -36,6 +36,8 @@ class CodexMcpBridge < Formula
     require "timeout"
 
     assert_equal version.to_s, shell_output("#{bin}/codex-mcp-bridge --version").strip
+    installer = libexec/"lib/node_modules/@minhspark/codex-mcp-bridge/scripts/install-claude-desktop.mjs"
+    assert_equal "#!#{formula_opt_bin("node")}/node", installer.read.lines.first.chomp
 
     initialize = {
       jsonrpc: "2.0",
