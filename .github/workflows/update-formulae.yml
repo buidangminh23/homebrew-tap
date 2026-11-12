@@ -40,6 +40,7 @@ jobs:
           git add Formula/codex-mcp-bridge.rb
           git -c user.name=ci -c user.email=ci@localhost commit -q -m "test bump"
           brew tap buidangminh23/tap "$GITHUB_WORKSPACE"
+          if brew trust --help >/dev/null 2>&1; then brew trust --formula buidangminh23/tap/codex-mcp-bridge; fi
           brew style buidangminh23/tap
           brew install --build-from-source buidangminh23/tap/codex-mcp-bridge
           brew test buidangminh23/tap/codex-mcp-bridge

@@ -57,6 +57,7 @@ jobs:
           git add Casks/quota-control.rb
           git -c user.name=ci -c user.email=ci@localhost commit -q -m "test bump"
           brew tap buidangminh23/tap "$GITHUB_WORKSPACE"
+          if brew trust --help >/dev/null 2>&1; then brew trust --cask buidangminh23/tap/quota-control; fi
           brew style buidangminh23/tap
           brew audit --cask --strict --online buidangminh23/tap/quota-control
           brew install --cask buidangminh23/tap/quota-control
