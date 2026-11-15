@@ -1,5 +1,7 @@
 # buidangminh23/tap
 
+<p align="center"><a href="LICENSE"><img src="https://img.shields.io/github/license/buidangminh23/homebrew-tap" height="20" alt="license" /></a></p>
+
 Homebrew formulae and casks for tools published by [buidangminh23](https://github.com/buidangminh23).
 
 | Type | Name | Tool |
