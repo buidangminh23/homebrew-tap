@@ -1,6 +1,6 @@
 cask "quota-control" do
-  version "0.3.55"
-  sha256 "5e7c386c1122417b615f0e60edd9fae1151254cb6d2d07d6ade607825837a378"
+  version "0.3.57"
+  sha256 "e0b18e926548074b5ebfffffe66324c17bde11c0867f3f80fc2d82438bd6436d"
 
   url "https://github.com/buidangminh23/quota-control/releases/download/v#{version}/Quota-Control_#{version}_aarch64.dmg"
   name "Quota Control"
