@@ -1,8 +1,8 @@
 class CodexMcpBridge < Formula
   desc "Two-way MCP bridge between Claude and Codex"
   homepage "https://github.com/buidangminh23/codex-mcp-bridge"
-  url "https://registry.npmjs.org/@minhspark/codex-mcp-bridge/-/codex-mcp-bridge-2.7.2.tgz"
-  sha256 "1eb54aca3779420ad1d7b1084645a640d500dc747ab222822288f66368bfe8d2"
+  url "https://registry.npmjs.org/@minhspark/codex-mcp-bridge/-/codex-mcp-bridge-2.7.4.tgz"
+  sha256 "e5d519f2449566be9b115bec5cbf490e8c3546a2d355a6974031e1ae86e6046c"
   license "MIT"
 
   livecheck do
