@@ -50,6 +50,7 @@ jobs:
       - name: Audit, install and test the bumped cask
         if: steps.bump.outputs.updated == 'true'
         env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
           HOMEBREW_NO_AUTO_UPDATE: "1"
           HOMEBREW_NO_INSTALL_CLEANUP: "1"
           VERSION: ${{ steps.bump.outputs.version }}
